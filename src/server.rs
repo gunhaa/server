@@ -1,4 +1,10 @@
 use std::io::Read;
+// crate는 전체 크레이트의 바깥을 뜻한다.
+// 바깥의 http에서 request를 가져와 사용할 수 있다.
+use crate::http::Request;
+// 트레이트를 범위로 가져와야 사용할 수 있다
+use std::convert::TryFrom;
+use std::convert::TryInto;
 use std::net::TcpListener;
 // 해당 파일을 통해 분리시키는 방법은
 // mod server에 여러가지를 넣어논 것과 같은 상태가 된다
@@ -57,7 +63,16 @@ impl Server {
                     let mut buffer = [0; 1024];
                     match stream.read(&mut buffer) {
                         Ok(_) => {
-                            println!("Received a request: {}", String::from_utf8_lossy(&buffer))
+                            println!("Received a request: {}", String::from_utf8_lossy(&buffer));
+                            // 두 방법 모두 byte array를 슬라이스 타입으로 만드는 방법이다.
+                            // Request::try_from(&buffer as &[u8]);
+                            match Request::try_from(&buffer[..]){
+                                Ok(request) => {},
+                                Err(e) => println!("failed to parse a request: {}", e),
+                            }
+                            // 현재 상태론 컴파일러가 추론이 불가능하다. 명확한 자료형을 줘야한다.
+                            // &buffer[..].try_into();
+                            // let res : &Result<Request, > = &buffer .. 으로 자료형을 줘서 뺴내는 방법도 가능하다.
                         }, 
                         Err(e) => print!("Failed to read from connection : {}" , e),
                     }
