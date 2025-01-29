@@ -1,3 +1,6 @@
+// enum을 str로 바꿀때 사용하는 특수한 모듈
+use std::str::FromStr;
+
 pub enum Method {
     // 메모리에서 Enum은 단순한 숫자로 표시된다,
     // GET으로 온다면 0, 이후부턴 1씩 증가하는 식으로 표현된다.
@@ -16,3 +19,24 @@ pub enum Method {
     TRACE,
     PATCH,
 }
+
+impl FromStr for Method {
+    type Err = MethodError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "GET" => Ok(Self::GET), 
+            "DELETE" => Ok(Self::DELETE),
+            "POST" => Ok(Self::POST),
+            "PUT" => Ok(Self::PUT),
+            "HEAD" => Ok(Self::HEAD),
+            "CONNECT" => Ok(Self::CONNECT),
+            "OPTIONS" => Ok(Self::OPTIONS),
+            "TRACE" => Ok(Self::TRACE),
+            "PATCH" => Ok(Self::PATCH),
+            _ => Err(MethodError)
+        }
+    }
+}
+
+pub struct MethodError;

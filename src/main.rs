@@ -1,3 +1,6 @@
+// 컴파일러 경고 끄기
+#![allow(dead_code)]
+
 use server::Server;
 // 파일로 분리시 해당 방법으로 작성 가능하다.
 // 컴파일러가 해당 모듈을 찾아 mod server에 넣어준다.
@@ -6,6 +9,8 @@ mod server;
 use http::Method;
 use http::Request;
 mod http;
+
+
 
 
 fn main() {
