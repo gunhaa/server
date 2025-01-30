@@ -1,11 +1,24 @@
-use std::io::Read;
+use std::io::{Read, Write};
+// use crate::http::response;
 // crate는 전체 크레이트의 바깥을 뜻한다.
 // 바깥의 http에서 request를 가져와 사용할 수 있다.
-use crate::http::Request;
+use crate::http::{Request, Response, StatusCode, ParseError};
 // 트레이트를 범위로 가져와야 사용할 수 있다
 use std::convert::TryFrom;
 use std::convert::TryInto;
 use std::net::TcpListener;
+
+pub trait Handler {
+    fn handle_request(&mut self, request: &Request) -> Response;
+
+    // trait에서 기본 값으로 제공하는 메소드
+    fn handle_bad_request(&mut self, e: &ParseError) -> Response{
+        println!("Failed to parse request: {}", e);
+        Response::new(StatusCode::BadRequest, None)
+    }
+}
+
+
 // 해당 파일을 통해 분리시키는 방법은
 // mod server에 여러가지를 넣어논 것과 같은 상태가 된다
 // rust에서 모든 파일은 모듈과 같다.
@@ -25,7 +38,7 @@ impl Server {
     //java나 C++에서는 this로 불린다
     // 해당 코드에서는 run이 구조체의 소유권을 갖는다.
     // 소유권을 갖지 않게하기위해서는 &self로 파라미터를 가지면 된다.
-    pub fn run(self) {
+    pub fn run(self, mut handler : impl Handler) {
         println!("Listening on {}", self.addr);
                                                     // 값을 옮기는 것이 아닌, 참조값을 넣어준다
                                                                 // result 반환형의 wrap을 벗겨, 결과를 반환시킨다.
@@ -66,14 +79,36 @@ impl Server {
                             println!("Received a request: {}", String::from_utf8_lossy(&buffer));
                             // 두 방법 모두 byte array를 슬라이스 타입으로 만드는 방법이다.
                             // Request::try_from(&buffer as &[u8]);
-                            match Request::try_from(&buffer[..]){
-                                Ok(request) => {},
-                                Err(e) => println!("failed to parse a request: {}", e),
+                            let response = match Request::try_from(&buffer[..]){
+                                Ok(request) => {
+                                    // dbg!(request);
+                                    // Response::new(StatusCode::Ok, Some("<h1>IT WORKS</h1>".to_string()))
+                                    // 해당 방식은 heap에 계속해서 할당되고, 서버 실행 동안 메모리가 해제되지 않는 문제가 있다
+                                    // response내에서 출력시키고 해제시켜야한다.
+                                    // write!(stream, "{}", response);
+                                    // response.send(&mut stream);
+                                    handler.handle_request(&request)
+
+                                }
+                                Err(e) => {
+                                    // println!("failed to parse a request: {}", e);
+                                    // Response::new(StatusCode::BadRequest, None).send(&mut stream);
+                                    // Response::new(StatusCode::BadRequest, None)
+                                    handler.handle_bad_request(&e)
+                                }
+                            };
+
+
+                            // 기본적으로 response.send가 실행되는데
+                            // if let (case) case의 경우 하단의 코드가 실행된다는뜻
+                            if let Err(e) = response.send(&mut stream) {
+                                println!("Failed to send response: {}", e);
                             }
+
                             // 현재 상태론 컴파일러가 추론이 불가능하다. 명확한 자료형을 줘야한다.
                             // &buffer[..].try_into();
                             // let res : &Result<Request, > = &buffer .. 으로 자료형을 줘서 뺴내는 방법도 가능하다.
-                        }, 
+                        },
                         Err(e) => print!("Failed to read from connection : {}" , e),
                     }
                 },

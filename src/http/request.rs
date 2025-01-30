@@ -6,8 +6,11 @@ use std::convert::TryFrom;
 use std::error::Error;
 // use std::fmt::Display;
 use std::fmt::{Result as FmtResult, Display, Formatter, Debug};
+use super::{QueryString, QueryStringValue};
 // use std::fmt::Formatter;
                 // lifetime 설정방법
+// 기본 트레이트 설정을 적용한다.
+#[derive(Debug)]
 pub struct Request<'buf> {
     // buffer를 참조하고있기때문에 dangling pointer가 된다(use after free)
     // 그래서 life cycle을 필요로 한다.
@@ -22,7 +25,7 @@ pub struct Request<'buf> {
     // 해당 방식으로 query_string의 유무를 알 수 있다.
     // Option은 너무 자주 사용되기에 자동 import된다
     // 만약 import되지 않는다면, 수동으로 use std::option::Option;을 입력해야 할 것이다.
-    query_string: Option<&'buf str>,
+    query_string: Option<QueryString<'buf>>,
     // query_string : String,
     // 해당 method는 사실 String이 아닌 Enum으로 표현될 수 있다, 가능한 메소드는 정해져 있기 때문이다.
     // Enum은 유한한 값 집합을 갖고 있는 특수한 타입이다.
@@ -31,6 +34,21 @@ pub struct Request<'buf> {
     // method : super::method::Method,
     // use super::method::Method; 를 통해 생략 할 수 있음
     method: Method,
+}
+
+// getter
+impl<'buf> Request<'buf> {
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn method(&self) -> &Method {
+        &self.method
+    }
+
+    pub fn query_string(&self) -> Option<&QueryString> {
+        self.query_string.as_ref()
+    }
 }
 
 // impl Request {
@@ -112,7 +130,7 @@ impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
         // }
         // 위 코드의 개선 형태이다.
         if let Some(i) = path.find('?') {
-            query_string = Some(&path[i+1..]);
+            query_string = Some(QueryString::from(&path[i+1..]));
             path = &path[..i];
         }
 

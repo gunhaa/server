@@ -1,6 +1,6 @@
 // enum을 str로 바꿀때 사용하는 특수한 모듈
 use std::str::FromStr;
-
+#[derive(Debug)]
 pub enum Method {
     // 메모리에서 Enum은 단순한 숫자로 표시된다,
     // GET으로 온다면 0, 이후부턴 1씩 증가하는 식으로 표현된다.

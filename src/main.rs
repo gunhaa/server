@@ -5,12 +5,13 @@ use server::Server;
 // 파일로 분리시 해당 방법으로 작성 가능하다.
 // 컴파일러가 해당 모듈을 찾아 mod server에 넣어준다.
 mod server;
+use website_handler::WebsiteHandler;
+use std::env;
 
 use http::Method;
 use http::Request;
 mod http;
-
-
+mod website_handler;
 
 
 fn main() {
@@ -67,8 +68,17 @@ fn main() {
     // T는 제네릭 타입을 의미한다. 어떤 타입도 담을 수 있지만, 명시적으로 지정되어야 한다.
     // let server = server::Server::new("127.0.0.1:8080".to_string());
     // use Server::server로 생략할 수 있음
+
+    // 따로 파일이 없다면 PUBLIC_PATH=$(pwd)/public cargo run 으로 실행 가능하다
+    // 컴파일러에 저장된 현재 디렉토리
+    // cargo expand | code - 로 확인 가능
+    let default_path = format!("{}/public" , env!("CARGO_MANIFEST_DIR"));
+    let public_path = env::var("PUBLIC_PATH").unwrap_or(default_path);
+    println!("public path : {}", public_path);
+
     let server = Server::new("127.0.0.1:8080".to_string());
-    server.run();
+    server.run(WebsiteHandler::new(public_path));
+
 }
 
 // // server 모듈 생성, 일종의 server 네임스페이스 안에 있는 것과 같다.
